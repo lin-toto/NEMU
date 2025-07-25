@@ -623,4 +623,12 @@ config RV_ZAWRS
     This extension adds the WRS instruction which waits until the reservation set is empty.
     In NEMU, WRS instruction currently acts as nop.
 
+config RV_ZIMTE
+  bool "RISC-V Extension for Memory Tagging. Doesn't fully respect the standard"
+  default n
+
+config RV_DIFT
+  bool "Non-standard extension for Dynamic Information Flow Tracking"
+  default n
+
 endmenu

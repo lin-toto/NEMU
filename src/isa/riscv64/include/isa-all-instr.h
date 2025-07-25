@@ -332,6 +332,20 @@
 #define ZIHINTPAUSE_INSTR_NULLARY(f)
 #endif //CONFIG_RV_ZIHINTPAUSE
 
+#ifdef CONFIG_RV_ZIMTE
+#define ZIMTE_INSTR_TERNARY(f) \
+    f(mte_gentag) f(mte_addtag) f(mte_settag) f(mte_gettag)
+#else
+#define ZIMTE_INSTR_TERNARY(f)
+#endif // CONFIG_RV_ZIMTE
+
+#ifdef CONFIG_RV_DIFT
+#define DIFT_INSTR_TERNARY(f) \
+    f(dift_setlabel) f(dift_getlabel)
+#else
+#define DIFT_INSTR_TERNARY(f)
+#endif //CONFIG_RV_DIFT
+
 #define INSTR_NULLARY(f) \
   f(inv) f(rt_inv) f(nemu_trap) \
   ZIHINTPAUSE_INSTR_NULLARY(f) \
@@ -388,7 +402,9 @@
   ZFH_INSTR_TERNARY(f) \
   ZFA_INSTR_TERNARY(f) \
   ZFH_ZFA_INSTR_TERNARY(f) \
-  ZCB_INSTR_TERNARY(f)
+  ZCB_INSTR_TERNARY(f) \
+  ZIMTE_INSTR_TERNARY(f) \
+  DIFT_INSTR_TERNARY(f)
 
 #define INSTR_TERNARY_CSR(f) \
   SYS_INSTR_TERNARY_CSR(f) 

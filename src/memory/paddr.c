@@ -26,6 +26,10 @@
 #include "../local-include/csr.h"
 #include "../local-include/intr.h"
 
+#ifdef CONFIG_RV_ZIMTE
+#include <memory/mem_metadata.h>
+#endif
+
 unsigned long MEMORY_SIZE = CONFIG_MSIZE;
 unsigned int PMEM_HARTID = 0;
 
@@ -194,6 +198,10 @@ void allocate_memory_with_mmap()
 void init_mem() {
   allocate_memory_with_mmap();
 
+#ifdef CONFIG_RV_ZIMTE
+  init_mem_metadata();
+#endif
+
 #ifdef CONFIG_DIFFTEST_STORE_COMMIT
   store_queue_reset();
 #endif
@@ -247,6 +255,23 @@ bool check_paddr(paddr_t addr, int len, int type, int trap_type, int mode, vaddr
       raise_access_fault(EX_SAF, vaddr);
     } else {
       Log("isa mbmc check failed");
+      raise_read_access_fault(type, vaddr);
+    }
+    return false;
+  }
+  #endif
+
+  #ifdef CONFIG_RV_ZIMTE
+  // TODO: check CSR on MTE mode
+  uint8_t pointer_tag = extract_tag_from_vaddr(vaddr);
+  uint8_t mc_tag = mem_metadata_read_paddr(addr).mte_tag;
+
+  // Tag checking is skipped if zero. Might not comply with the standard though
+  if (pointer_tag && mc_tag && pointer_tag != mc_tag) {
+    if (type == MEM_TYPE_WRITE) {
+      raise_access_fault(EX_SAF, vaddr);
+    } else {
+      Log("isa mte tag check failed");
       raise_read_access_fault(type, vaddr);
     }
     return false;

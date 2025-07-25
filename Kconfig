@@ -447,7 +447,7 @@ config RT_CHECK
 config PERF_OPT
   depends on !SHARE
   bool "Performance optimization"
-  default y
+  default n
 
 if PERF_OPT
 config TCACHE_SIZE

@@ -45,4 +45,10 @@
 #ifdef CONFIG_RV_ZFA
 #include "../instr/rvzfa/exec.h"
 #endif
+#ifdef CONFIG_RV_ZIMTE
+#include "../instr/rvzimte/exec.h"
+#endif
+#ifdef CONFIG_RV_DIFT
+#include "../instr/dift/exec.h"
+#endif
 #include "../instr/special.h"

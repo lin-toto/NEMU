@@ -1,0 +1,10 @@
+#ifdef CONFIG_RV_DIFT
+
+def_THelper(dift) {
+    // encoded with mop.rr.4 and mop.rr.5
+    def_INSTR_IDTAB("1100001 ????? ????? 100 ????? 1110011", R, dift_setlabel);
+    def_INSTR_IDTAB("1100011 ????? ????? 100 ????? 1110011", R, dift_getlabel);
+    return EXEC_ID_inv;
+}
+
+#endif
