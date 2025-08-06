@@ -468,6 +468,7 @@ static inline word_t* csr_decode(uint32_t addr) {
 #define MENVCFG_RMASK_CBCFE   (0x1UL << 6)
 #define MENVCFG_RMASK_CBIE    (0x3UL << 4)
 #define MENVCFG_RMASK_PMM     MENVCFG_PMM
+#define MENVCFG_RMASK_MTE     0x0000000c00000000
 #define MENVCFG_RMASK (   \
   MENVCFG_RMASK_STCE    | \
   MENVCFG_RMASK_PBMTE   | \
@@ -475,7 +476,8 @@ static inline word_t* csr_decode(uint32_t addr) {
   MENVCFG_RMASK_CBZE    | \
   MENVCFG_RMASK_CBCFE   | \
   MENVCFG_RMASK_CBIE    | \
-  MENVCFG_RMASK_PMM       \
+  MENVCFG_RMASK_PMM     | \
+  MENVCFG_RMASK_MTE       \
 )
 
 #define MENVCFG_WMASK_STCE    MUXDEF(CONFIG_RV_SSTC, MENVCFG_RMASK_STCE, 0)
@@ -485,6 +487,7 @@ static inline word_t* csr_decode(uint32_t addr) {
 #define MENVCFG_WMASK_CBCFE   MUXDEF(CONFIG_RV_CBO, MENVCFG_RMASK_CBCFE, 0)
 #define MENVCFG_WMASK_CBIE    MUXDEF(CONFIG_RV_CBO, MENVCFG_RMASK_CBIE, 0)
 #define MENVCFG_WMASK_PMM     MUXDEF(CONFIG_RV_SMNPM, MENVCFG_RMASK_PMM, 0)
+#define MENVCFG_WMASK_MTE     MUXDEF(CONFIG_RV_ZIMTE, MENVCFG_RMASK_MTE, 0)
 #define MENVCFG_WMASK (    \
   MENVCFG_WMASK_STCE     | \
   MENVCFG_WMASK_PBMTE    | \
@@ -492,7 +495,8 @@ static inline word_t* csr_decode(uint32_t addr) {
   MENVCFG_WMASK_CBZE     | \
   MENVCFG_WMASK_CBCFE    | \
   MENVCFG_WMASK_CBIE     | \
-  MENVCFG_WMASK_PMM        \
+  MENVCFG_WMASK_PMM      | \
+  MENVCFG_WMASK_MTE        \
 )
 
 #define SENVCFG_WMASK_PMM     MUXDEF(CONFIG_RV_SSNPM, SENVCFG_PMM, 0)
@@ -500,7 +504,8 @@ static inline word_t* csr_decode(uint32_t addr) {
   MENVCFG_WMASK_CBZE     | \
   MENVCFG_WMASK_CBCFE    | \
   MENVCFG_WMASK_CBIE     | \
-  SENVCFG_WMASK_PMM        \
+  SENVCFG_WMASK_PMM      | \
+  MENVCFG_WMASK_MTE        \
 )
 
 #define HENVCFG_WMASK_PMM     MUXDEF(CONFIG_RV_SSNPM, HENVCFG_PMM, 0)
@@ -511,7 +516,8 @@ static inline word_t* csr_decode(uint32_t addr) {
   MENVCFG_WMASK_CBZE     | \
   MENVCFG_WMASK_CBCFE    | \
   MENVCFG_WMASK_CBIE     | \
-  HENVCFG_WMASK_PMM        \
+  HENVCFG_WMASK_PMM      | \
+  MENVCFG_WMASK_MTE        \
 )
 
 #define MSECCFG_WMASK_PMM     MUXDEF(CONFIG_RV_SMMPM, MSECCFG_PMM, 0)
@@ -614,9 +620,9 @@ static inline word_t* csr_decode(uint32_t addr) {
                         (1 << EX_ECS) | \
                         (1 << EX_IPF) | \
                         (1 << EX_LPF) | \
-                        (1 << EX_SPF) | \
+                        (1 << EX_SPF)/* | \
                         (1 << EX_SWC) | \
-                        (1 << EX_HWE))
+                        (1 << EX_HWE)*/)
 
 #define MEDELEG_MASK MUXDEF(CONFIG_RVH,  MEDELEG_RVH, MEDELEG_NONRVH)
 
@@ -1613,6 +1619,7 @@ bool iselect_is_major_ip(uint64_t iselect) {
 
 static word_t csr_read(uint32_t csrid) {
   word_t *src = csr_decode(csrid);
+
   switch (csrid) {
     /************************* Unprivileged and User-Level CSRs *************************/
 #ifndef CONFIG_FPU_NONE
@@ -1809,6 +1816,7 @@ static word_t csr_read(uint32_t csrid) {
       int idx = (src - &csr_array[CSR_PMPADDR_BASE]);
       if (idx >= CONFIG_RV_PMP_ACTIVE_NUM) {
         // CSRs of inactive pmp entries are read-only zero.
+        longjmp_exception(EX_II);
         return 0;
       }
 
@@ -1880,6 +1888,8 @@ static word_t csr_read(uint32_t csrid) {
       // But instruction counter of NEMU is not accurate when enabling Performance optimization.
       difftest_skip_ref();
       return get_minstret();
+    case CSR_MHPMCOUNTER_BASE ... CSR_MHPMCOUNTER_BASE+CSR_MHPMCOUNTER_NUM-1:
+      longjmp_exception(EX_II); break;
     /************************* All Others Normal CSRs *************************/
     default: return *src;
   }
@@ -2405,6 +2415,7 @@ static void csr_write(uint32_t csrid, word_t src) {
       int idx = dest - &csr_array[CSR_PMPADDR_BASE];
       if (idx >= CONFIG_RV_PMP_ACTIVE_NUM) {
         // CSRs of inactive pmp entries are read-only zero.
+        longjmp_exception(EX_II);
         return;
       }
 
@@ -2566,7 +2577,8 @@ static void csr_write(uint32_t csrid, word_t src) {
     case CSR_MCYCLE:  mcycle->val = set_mcycle(src); break;
     case CSR_MINSTRET: minstret->val = set_minstret(src); break;
 
-    case CSR_MHPMCOUNTER_BASE ... CSR_MHPMCOUNTER_BASE+CSR_MHPMCOUNTER_NUM-1: break;
+    case CSR_MHPMCOUNTER_BASE ... CSR_MHPMCOUNTER_BASE+CSR_MHPMCOUNTER_NUM-1:
+        longjmp_exception(EX_II); break;
 
     case CUSTOM_CSR_MCOREPWR: *dest = mask_bitset(*dest, CUSTOM_CSR_MCOREPWR_WMASK, src); break;
     case CUSTOM_CSR_MFLUSHPWR: *dest = mask_bitset(*dest, CUSTOM_CSR_MFLUSHPWR_WMASK, src); break;
