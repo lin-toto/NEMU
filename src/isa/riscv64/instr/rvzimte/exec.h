@@ -1,7 +1,6 @@
 #ifdef CONFIG_RV_ZIMTE
 
 #include <memory/mem_metadata.h>
-#include <stdlib.h>
 
 def_EHelper(mte_gentag) {
   uint8_t tag = 1 + rand() % ((1 << MTE_TAG_LENGTH) - 1);

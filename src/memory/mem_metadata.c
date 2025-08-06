@@ -8,10 +8,6 @@
 #include "../local-include/csr.h"
 #include "../local-include/intr.h"
 
-#ifdef CONFIG_PERF_OPT
-#error "PERF_OPT not supported by memory metadata"
-#endif
-
 #ifdef CONFIG_RVH
 #error "RVH is not supported by memory metadata"
 #endif

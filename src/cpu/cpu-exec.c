@@ -24,6 +24,7 @@
 #include <locale.h>
 #include <setjmp.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <generated/autoconf.h>
 #include <profiling/profiling_control.h>
 #include <checkpoint/semantic_point.h>
