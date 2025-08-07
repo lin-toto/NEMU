@@ -37,7 +37,7 @@ static inline IOMap* fetch_mmio_map(paddr_t addr) {
 bool is_in_mmio(paddr_t addr) {
 #ifdef CONFIG_ENABLE_CONFIG_MMIO_SPACE
   for (int i = 0; i < MMIO_SPEC_PAIR_NUM; ++i) {
-    if (mmio_spec_bound[i] <= addr && addr <= mmio_spec_bound[i + 1]) {
+    if (mmio_spec_bound[i * 2] <= addr && addr <= mmio_spec_bound[i * 2 + 1]) {
       Logm("is in mmio: " FMT_PADDR, addr);
       return true;
     }
